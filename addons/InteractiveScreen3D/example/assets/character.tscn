@@ -1,0 +1,313 @@
+[gd_scene format=3 uid="uid://cc1m2a1obsyn4"]
+
+[sub_resource type="GDScript" id="GDScript_hqewk"]
+resource_name = "FPC"
+script/source = "# COPYRIGHT Colormatic Studios
+# MIT license
+# Quality Godot First Person Controller v2
+# Modified by clearleaf for InteractiveScreen3D demo scene. 
+# DO NOT BOTHER ACTUALLY USING THIS. GET THE ORIGINAL.
+
+extends CharacterBody3D
+
+@export var base_speed : float = 3.0
+
+@export var acceleration : float = 10.0
+@export var mouse_sensitivity : float = 0.1
+@export var invert_camera_x_axis : bool = false
+@export var invert_camera_y_axis : bool = false
+@export var immobile : bool = false
+
+@onready var HEAD = $Head
+@onready var CAMERA = $Head/Camera
+@onready var HEADBOB_ANIMATION = $Head/HeadbobAnimation
+@onready var COLLISION_MESH = $Collision
+
+var in_air_momentum : bool = true
+var motion_smoothing : bool = true
+var view_bobbing : bool = true
+var gravity_enabled : bool = true
+
+var speed : float = base_speed
+var current_speed : float = 0.0
+var state : String = \"normal\"
+var low_ceiling : bool = false # This is for when the ceiling is too low and the player needs to crouch.
+var was_on_floor : bool = true # Was the player on the floor last frame (for landing animation)
+var mouse_input : Vector2 = Vector2(0,0)
+var input_dir : Vector2 = Vector2.ZERO
+var moving : bool = false
+
+
+func _ready() -> void:
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+	HEAD.rotation.y = rotation.y
+	rotation.y = 0
+
+	_enter_normal_state()
+
+	if OS.get_name() == \"Web\":
+		Input.set_use_accumulated_input(false)
+
+
+func _physics_process(delta : float) -> void:
+	if not is_on_floor() and gravity_enabled:
+		velocity += get_gravity() * delta
+
+	input_dir = Vector2.ZERO
+
+	if not immobile: # Immobility works by interrupting user input, so other forces can still be applied to the player
+		input_dir = Vector2.ZERO
+		if Input.is_key_pressed(KEY_W):
+			input_dir.y -= 1
+		if Input.is_key_pressed(KEY_S):
+			input_dir.y += 1
+		if Input.is_key_pressed(KEY_A):
+			input_dir.x -= 1
+		if Input.is_key_pressed(KEY_D):
+			input_dir.x += 1
+		# Normalize so diagonal speed isn’t faster
+		if input_dir.length() > 1:
+			input_dir = input_dir.normalized()
+
+	moving = input_dir != Vector2.ZERO
+
+	_handle_movement(delta, input_dir)
+	current_speed = Vector3.ZERO.distance_to(get_real_velocity())
+
+	_handle_head_rotation(delta)
+
+
+	_handle_state(moving)
+
+	if view_bobbing:
+		_play_headbob_animation(moving)
+
+
+	was_on_floor = is_on_floor() # This must always be at the end of physics_process
+
+#endregion
+
+#region Input Handling
+
+func _handle_movement(delta : float, input_dir : Vector2) -> void:
+	var direction2D := input_dir.rotated(-HEAD.rotation.y)
+	var direction3D := Vector3(direction2D.x, 0, direction2D.y)
+	move_and_slide()
+
+	if in_air_momentum:
+		if is_on_floor():
+			if motion_smoothing:
+				velocity.x = lerp(velocity.x, direction3D.x * speed, acceleration * delta)
+				velocity.z = lerp(velocity.z, direction3D.z * speed, acceleration * delta)
+			else:
+				velocity.x = direction3D.x * speed
+				velocity.z = direction3D.z * speed
+	else:
+		if motion_smoothing:
+			velocity.x = lerp(velocity.x, direction3D.x * speed, acceleration * delta)
+			velocity.z = lerp(velocity.z, direction3D.z * speed, acceleration * delta)
+		else:
+			velocity.x = direction3D.x * speed
+			velocity.z = direction3D.z * speed
+
+
+func _handle_head_rotation(delta : float) -> void:
+	if invert_camera_x_axis:
+		HEAD.rotation_degrees.y -= mouse_input.x * mouse_sensitivity * -1
+	else:
+		HEAD.rotation_degrees.y -= mouse_input.x * mouse_sensitivity
+
+	if invert_camera_y_axis:
+		HEAD.rotation_degrees.x -= mouse_input.y * mouse_sensitivity * -1
+	else:
+		HEAD.rotation_degrees.x -= mouse_input.y * mouse_sensitivity
+
+	mouse_input = Vector2.ZERO
+	HEAD.rotation_degrees.x = clamp(HEAD.rotation_degrees.x, -90, 90)
+
+#endregion
+
+#region State Handling
+
+func _handle_state(moving : bool) -> void:
+	_enter_normal_state()
+
+
+# Any enter state function should only be called once when you want to enter that state, not every frame.
+func _enter_normal_state() -> void:
+
+	var prev_state = state
+	state = \"normal\"
+	speed = base_speed
+
+#endregion
+
+func _play_headbob_animation(moving : bool) -> void:
+	if moving and is_on_floor():
+		var use_headbob_animation = \"walk\"
+
+		var was_playing : bool = false
+		if HEADBOB_ANIMATION.current_animation == use_headbob_animation:
+			was_playing = true
+
+		HEADBOB_ANIMATION.play(use_headbob_animation, 0.25)
+		HEADBOB_ANIMATION.speed_scale = (current_speed / base_speed) * 1.75
+		if !was_playing:
+			HEADBOB_ANIMATION.seek(float(randi() % 2))
+
+	else:
+		if HEADBOB_ANIMATION.current_animation == \"walk\":
+			HEADBOB_ANIMATION.speed_scale = 1
+			HEADBOB_ANIMATION.play(\"RESET\", 1)
+
+
+func _unhandled_input(event : InputEvent) -> void:
+	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		mouse_input = event.screen_relative
+"
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kp17n"]
+albedo_color = Color(0.909804, 0.596078, 0, 1)
+clearcoat_enabled = true
+clearcoat_roughness = 0.2
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_jw1de"]
+material = SubResource("StandardMaterial3D_kp17n")
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_uy03j"]
+
+[sub_resource type="Animation" id="Animation_gh776"]
+resource_name = "RESET"
+length = 0.001
+loop_mode = 1
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Camera:position:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Camera:position:y")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(0),
+"points": PackedFloat32Array(0, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0)
+}
+
+[sub_resource type="Animation" id="Animation_8ku67"]
+resource_name = "sprint"
+length = 2.0
+loop_mode = 1
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Camera:position:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 1, 0, 1, 0),
+"points": PackedFloat32Array(0.06, -0.25, 0, 0.25, -0.01, 0, 0, 0, 0, 0, -0.06, -0.25, 0.01, 0.25, 0.01, 0, 0, 0, 0, 0, 0.06, -0.25, -0.01, 0.25, 0),
+"times": PackedFloat32Array(0, 0.5, 1, 1.5, 2)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Camera:position:y")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0, 0, 0),
+"points": PackedFloat32Array(0.05, -0.25, 0, 0.2, -0.01, 0, -0.2, 0.000186046, 0.2, 0.000186046, 0.05, -0.2, -0.01, 0.2, -0.01, 0, -0.2, 0, 0.2, 0, 0.05, -0.2, -0.01, 0.25, 0),
+"times": PackedFloat32Array(0, 0.5, 1, 1.5, 2)
+}
+
+[sub_resource type="Animation" id="Animation_lrqmv"]
+resource_name = "walk"
+length = 2.0
+loop_mode = 1
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Camera:position:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 1, 0, 1, 0),
+"points": PackedFloat32Array(0.04, -0.25, 0, 0.25, 0, 0, 0, 0, 0, 0, -0.04, -0.25, 0, 0.25, 0, 0, 0, 0, 0, 0, 0.04, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.5, 1, 1.5, 2)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Camera:position:y")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0, 0, 0),
+"points": PackedFloat32Array(-0.05, -0.25, 0, 0.2, 0.005, 0, -0.2, 0.000186046, 0.2, 0.000186046, -0.05, -0.2, 0.005, 0.2, 0.005, 0, -0.2, 0, 0.2, 0, -0.05, -0.2, 0.005, 0.25, 0),
+"times": PackedFloat32Array(0, 0.5, 1, 1.5, 2)
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_o0unb"]
+_data = {
+&"RESET": SubResource("Animation_gh776"),
+&"sprint": SubResource("Animation_8ku67"),
+&"walk": SubResource("Animation_lrqmv")
+}
+
+[sub_resource type="Gradient" id="Gradient_jeupc"]
+offsets = PackedFloat32Array(0.40361446, 1)
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_6a0f1"]
+gradient = SubResource("Gradient_jeupc")
+width = 16
+height = 16
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.20869565, 0.87826085)
+
+[node name="Character" type="CharacterBody3D" unique_id=1664366571]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 0, 0, 0)
+script = SubResource("GDScript_hqewk")
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=537830521]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("CapsuleMesh_jw1de")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1716049046]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_uy03j")
+
+[node name="Head" type="Node3D" parent="." unique_id=1736064418]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+
+[node name="Camera" type="Camera3D" parent="Head" unique_id=428476260]
+
+[node name="HeadbobAnimation" type="AnimationPlayer" parent="Head" unique_id=2050130428]
+libraries/ = SubResource("AnimationLibrary_o0unb")
+autoplay = &"RESET"
+blend_times = [&"RESET", &"RESET", 0.5, &"RESET", &"walk", 0.5, &"walk", &"RESET", 0.5]
+
+[node name="Reticle" type="CanvasLayer" parent="." unique_id=1817119242]
+
+[node name="CenterContainer" type="CenterContainer" parent="Reticle" unique_id=227994226]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextureRect" type="TextureRect" parent="Reticle/CenterContainer" unique_id=2063910068]
+layout_mode = 2
+texture = SubResource("GradientTexture2D_6a0f1")

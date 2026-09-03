@@ -1,0 +1,93 @@
+[gd_scene format=3 uid="uid://dfr81f7d2qe3r"]
+
+[sub_resource type="GDScript" id="GDScript_uqee5"]
+script/source = "extends Control
+
+signal pressed
+
+func _on_button_pressed() -> void:
+	pressed.emit()
+
+func _physics_process(delta: float) -> void:
+	$TextureRect.texture.noise.offset.x += delta * 4
+	$TextureRect.texture.noise.offset.y += delta
+"
+
+[sub_resource type="Gradient" id="Gradient_l5trg"]
+offsets = PackedFloat32Array(0.15662651, 1)
+colors = PackedColorArray(0.03248633, 0.37815893, 0.9300745, 1, 1, 1, 1, 1)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_c4tkt"]
+frequency = 0.0443
+offset = Vector3(178.57, 0, 0)
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_vmitb"]
+width = 100
+height = 100
+noise = SubResource("FastNoiseLite_c4tkt")
+color_ramp = SubResource("Gradient_l5trg")
+seamless = true
+seamless_blend_skirt = 0.644
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_l5trg"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0, 0.92156863, 0, 0.92156863)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rn873"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.8922505, 0.31162664, 0.23229524, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[node name="EpicButton" type="Control" unique_id=414596204]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = SubResource("GDScript_uqee5")
+metadata/_edit_use_anchors_ = true
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1591381506]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("NoiseTexture2D_vmitb")
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1401643589]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Button" type="Button" parent="CenterContainer" unique_id=655279381]
+layout_mode = 2
+theme_override_constants/outline_size = 17
+theme_override_font_sizes/font_size = 43
+theme_override_styles/pressed = SubResource("StyleBoxFlat_l5trg")
+theme_override_styles/hover = SubResource("StyleBoxFlat_rn873")
+text = "CLICK ME"
+
+[connection signal="pressed" from="CenterContainer/Button" to="." method="_on_button_pressed"]

@@ -1,0 +1,105 @@
+[gd_scene format=3 uid="uid://brirv6vdvycs"]
+
+[ext_resource type="PackedScene" uid="uid://cc1m2a1obsyn4" path="res://addons/InteractiveScreen3D/example/assets/character.tscn" id="1_ojaso"]
+[ext_resource type="PackedScene" uid="uid://dfr81f7d2qe3r" path="res://addons/InteractiveScreen3D/example/assets/epic_button.tscn" id="3_jeupc"]
+[ext_resource type="PackedScene" uid="uid://bdkjb7kxhps1y" path="res://addons/InteractiveScreen3D/InteractiveScreen3D.tscn" id="3_p2det"]
+[ext_resource type="Texture2D" uid="uid://eeuwl5r116c0" path="res://addons/InteractiveScreen3D/example/assets/icon.png" id="4_jeupc"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_op2lx"]
+vertex_color_use_as_albedo = true
+grow_amount = -5.517
+
+[sub_resource type="SphereMesh" id="SphereMesh_vmitb"]
+material = SubResource("StandardMaterial3D_op2lx")
+radius = 0.095
+height = 0.3
+radial_segments = 4
+rings = 1
+
+[sub_resource type="Gradient" id="Gradient_0cxq7"]
+interpolation_mode = 1
+offsets = PackedFloat32Array(0, 0.19753087, 0.42592594, 0.5555556, 0.70987654, 0.86419755, 1)
+colors = PackedColorArray(0.8862745, 0, 0, 1, 0.86750925, 0.34634492, 0.057986178, 1, 0.57355386, 0.50415206, 9.62615e-07, 1, 0.3424713, 0.7854066, 0, 1, 0, 0.34509805, 0.627451, 1, 0.94348556, 0.36056325, 0.9259942, 1, 0.70399916, 0.00044126273, 0.71900296, 1)
+
+[sub_resource type="GDScript" id="GDScript_rn873"]
+script/source = "extends CPUParticles3D
+
+
+func _on_epic_button_pressed() -> void:
+	emitting = true
+	pass # Replace with function body.
+"
+
+[sub_resource type="GDScript" id="GDScript_c4tkt"]
+resource_name = "rotate"
+script/source = "extends Node3D
+
+func _physics_process(delta: float) -> void:
+	rotate_y(delta/2)
+"
+
+[sub_resource type="BoxMesh" id="BoxMesh_uqee5"]
+size = Vector3(0.655, 1.08, 0.14)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_k6xo1"]
+albedo_texture = ExtResource("4_jeupc")
+texture_filter = 0
+
+[node name="ExampleScene" type="Node3D" unique_id=264356929]
+
+[node name="Character" parent="." unique_id=1664366571 instance=ExtResource("1_ojaso")]
+transform = Transform3D(-0.8708591, 0, 0.4915328, 0, 1, 0, -0.4915328, 0, -0.8708591, 5.5570083, -3.789443, -2.0984495)
+
+[node name="ConfettiPopper" type="CPUParticles3D" parent="." unique_id=884198734]
+transform = Transform3D(1, 0, 0, 0, -0.73098564, -0.68239284, 0, 0.68239284, -0.73098564, 3.5162308, -3.427855, 1.7178795)
+emitting = false
+amount = 46
+lifetime = 0.65
+one_shot = true
+explosiveness = 1.0
+mesh = SubResource("SphereMesh_vmitb")
+direction = Vector3(0, -1, 0)
+initial_velocity_min = 6.36
+initial_velocity_max = 6.36
+color = Color(0.94117194, 0.28902605, 0.63818926, 1)
+color_initial_ramp = SubResource("Gradient_0cxq7")
+hue_variation_min = 1.0
+hue_variation_max = 1.0
+script = SubResource("GDScript_rn873")
+
+[node name="InteractiveScreen3D2" parent="." unique_id=1359016580 instance=ExtResource("3_p2det")]
+transform = Transform3D(-0.9984758, 0, -0.055191744, 0, 1, 0, 0.055191744, 0, -0.9984758, 3.2980306, -1.8682187, 2.9208455)
+shaded = false
+
+[node name="EpicButton" parent="InteractiveScreen3D2" unique_id=414596204 instance=ExtResource("3_jeupc")]
+
+[node name="Rotator" type="Node3D" parent="." unique_id=1464571220]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1651635, -2.0789204, 0.13888633)
+script = SubResource("GDScript_c4tkt")
+
+[node name="InteractiveScreen3D3" parent="Rotator" unique_id=958132245 instance=ExtResource("3_p2det")]
+resolution = Vector2i(212, 360)
+
+[node name="EpicButton" parent="Rotator/InteractiveScreen3D3" unique_id=970880743 instance=ExtResource("3_jeupc")]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Rotator" unique_id=2043919397]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.07648647)
+mesh = SubResource("BoxMesh_uqee5")
+
+[node name="Level" type="Node3D" parent="." unique_id=528577969]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Level" unique_id=47647448]
+transform = Transform3D(0.9305249, 0.36622873, 0, -0.29468676, 0.748749, 0.5937463, 0.21744694, -0.5524957, 0.80465233, 1.2824104, 0, 0)
+
+[node name="CSGBox3D" type="CSGBox3D" parent="Level" unique_id=106872474]
+material_override = SubResource("StandardMaterial3D_k6xo1")
+use_collision = true
+size = Vector3(20, 20, 20)
+
+[node name="CSGBox3D" type="CSGBox3D" parent="Level/CSGBox3D" unique_id=1596976769]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.111699, -0.7681544, 0)
+operation = 2
+size = Vector3(7.8816013, 6.353691, 6.175)
+
+[connection signal="pressed" from="InteractiveScreen3D2/EpicButton" to="ConfettiPopper" method="_on_epic_button_pressed"]
+[connection signal="pressed" from="Rotator/InteractiveScreen3D3/EpicButton" to="ConfettiPopper" method="_on_epic_button_pressed"]

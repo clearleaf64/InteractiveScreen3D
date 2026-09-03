@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://bdkjb7kxhps1y"]
+
+[ext_resource type="Script" uid="uid://rpltv4m628ql" path="res://addons/InteractiveScreen3D/interactive_screen_3d.gd" id="1_2a7re"]
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_3lmx1"]
+viewport_path = NodePath("SubViewport")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_avjmd"]
+resource_local_to_scene = true
+albedo_texture = SubResource("ViewportTexture_3lmx1")
+
+[sub_resource type="QuadMesh" id="QuadMesh_uqee5"]
+resource_local_to_scene = true
+material = SubResource("StandardMaterial3D_avjmd")
+size = Vector2(1.747191, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4s6b0"]
+resource_local_to_scene = true
+size = Vector3(1.747191, 1, 0.1)
+
+[node name="InteractiveScreen3D" type="Area3D" unique_id=730334290]
+script = ExtResource("1_2a7re")
+resolution = Vector2i(622, 356)
+
+[node name="DisplayMesh" type="MeshInstance3D" parent="." unique_id=1672467417 groups=["screen_internal"]]
+unique_name_in_owner = true
+mesh = SubResource("QuadMesh_uqee5")
+
+[node name="MouseDetector" type="CollisionShape3D" parent="." unique_id=1859863144 groups=["screen_internal"]]
+shape = SubResource("BoxShape3D_4s6b0")
+
+[node name="SubViewport" type="SubViewport" parent="." unique_id=378930827 groups=["screen_internal"]]
+size = Vector2i(622, 356)
