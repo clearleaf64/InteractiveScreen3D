@@ -46,9 +46,6 @@ var screen_height: float = 1.0:
 
 
 func set_shaded(shade_screen:bool):
-	if not mesh_instance.mesh.surface_get_material(0):
-		print(\"What the fuck. \" + name)
-		return
 	var mat = mesh_instance.mesh.surface_get_material(0).duplicate()
 	if shade_screen:
 		mat.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
@@ -244,7 +241,6 @@ func handle_camera_mouse_button(event: InputEventMouseButton):
 	var hit_position: Vector3 = result[\"position\"]
 	var hit_normal: Vector3 = result[\"normal\"]
 
-	# Don't click the back of the display.
 	if hit_normal.dot(ray_direction) >= 0.0:
 		return
 
