@@ -293,6 +293,7 @@ shape = SubResource("CapsuleShape3D_uy03j")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 
 [node name="Camera" type="Camera3D" parent="Head" unique_id=428476260]
+near = 0.005
 
 [node name="HeadbobAnimation" type="AnimationPlayer" parent="Head" unique_id=2050130428]
 libraries/ = SubResource("AnimationLibrary_o0unb")

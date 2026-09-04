@@ -1,0 +1,127 @@
+[gd_scene format=3 uid="uid://okj331lgh2ua"]
+
+[ext_resource type="PackedScene" uid="uid://bdkjb7kxhps1y" path="res://addons/InteractiveScreen3D/InteractiveScreen3D.tscn" id="1_ov4kd"]
+[ext_resource type="PackedScene" uid="uid://dfr81f7d2qe3r" path="res://addons/InteractiveScreen3D/example/assets/epic_button.tscn" id="2_qplvq"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_c4tkt"]
+size = Vector2(1.875, 1)
+
+[sub_resource type="Shader" id="Shader_2le7c"]
+code = "// SHADER ORIGINALLY CREATED BY \"caaaaaaarter\" FROM SHADERTOY
+// MODIFIED AND PORTED TO GODOT BY AHOPNESS (@ahopness)
+// Adapted for Godot 4 spatial QuadMesh screen overlay
+// LICENSE : CC0
+// SHADERTOY LINK : https://www.shadertoy.com/view/4lB3Dc
+
+shader_type spatial;
+
+render_mode unshaded, cull_disabled, depth_draw_never;
+
+uniform sampler2D screen_texture : hint_screen_texture, filter_linear_mipmap;
+
+uniform float shake_amount_x : hint_range(1.0, 500.0) = 250.0;
+uniform float shake_amount_y : hint_range(1.0, 500.0) = 40.0;
+uniform float white_hlines : hint_range(0.0, 50.0) = 50.0;
+uniform float white_vlines : hint_range(0.0, 80.0) = 80.0;
+
+
+float rand(vec2 co)
+{
+	return fract(
+		sin(dot(co.xy, vec2(12.9898, 78.233)))
+		* 43758.5453
+	);
+}
+
+
+void fragment()
+{
+	vec4 texColor = vec4(0.0);
+
+	// Normalized coordinates of the screen.
+	vec2 samplePosition = SCREEN_UV;
+
+	// Jitter each line left and right.
+	samplePosition.x += (
+		rand(vec2(TIME, SCREEN_UV.y)) - 0.5
+	) / shake_amount_x;
+
+	// Jitter the whole picture up and down.
+	samplePosition.y += (
+		rand(vec2(TIME)) - 0.5
+	) / shake_amount_y;
+
+	// Slightly add color noise to each line.
+	float noise_r = rand(vec2(SCREEN_UV.y, TIME));
+	float noise_g = rand(vec2(SCREEN_UV.y, TIME + 1.0));
+	float noise_b = rand(vec2(SCREEN_UV.y, TIME + 2.0));
+
+	texColor += vec4(
+		-0.5 + noise_r,
+		-0.5 + noise_g,
+		-0.5 + noise_b,
+		0.0
+	) * 0.1;
+
+
+	// Static/noise pattern.
+	float whiteNoise = rand(
+		vec2(
+			floor(samplePosition.y * white_vlines),
+			floor(samplePosition.x * white_hlines)
+		)
+		+ vec2(TIME, 0.0)
+	);
+
+
+	if (
+		whiteNoise > 11.5 - 30.0 * samplePosition.y ||
+		whiteNoise < 1.5 - 5.0 * samplePosition.y
+	)
+	{
+		// Sample whatever is behind the front quad.
+		texColor += texture(
+			screen_texture,
+			samplePosition
+		);
+	}
+	else
+	{
+		// Static.
+		texColor = vec4(1.0);
+	}
+
+
+	ALBEDO = texColor.rgb;
+	ALPHA = 1.0;
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_0cxq7"]
+render_priority = 0
+shader = SubResource("Shader_2le7c")
+shader_parameter/shake_amount_x = 110.18400518624
+shader_parameter/shake_amount_y = 85.802004028095
+shader_parameter/white_hlines = 50.0
+shader_parameter/white_vlines = 80.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ov4kd"]
+albedo_color = Color(0.7173379, 0, 0.26977167, 1)
+
+[sub_resource type="QuadMesh" id="QuadMesh_ov4kd"]
+material = SubResource("StandardMaterial3D_ov4kd")
+size = Vector2(2.45, 1.665)
+
+[node name="Pc" type="Node3D" unique_id=405949150]
+
+[node name="InteractiveScreen3D" parent="." unique_id=730334290 instance=ExtResource("1_ov4kd")]
+
+[node name="EpicButton" parent="InteractiveScreen3D" unique_id=414596204 instance=ExtResource("2_qplvq")]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1926203707]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.039042354)
+mesh = SubResource("QuadMesh_c4tkt")
+surface_material_override/0 = SubResource("ShaderMaterial_0cxq7")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=586704226]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.0643636)
+mesh = SubResource("QuadMesh_ov4kd")
